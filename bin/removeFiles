@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+var fs = require('fs');
+var removeFiles = require('../');
+var path = process.argv[2];
+var threshold = parseInt(process.argv[3]) || 14;
+
+if(!path) {
+	console.error("Mandatory path argument is not set. Exiting.");
+	process.exit(1);
+}
+
+var recursive = process.argv[4] || "true";
+if (recursive.toLowerCase() === "false") {
+	recursive = false;
+} else {
+	recursive = true;
+}
+
+var dryRun = process.argv[5] || "true";
+if (dryRun.toLowerCase() === "false") {
+	dryRun = false;
+} else {
+	dryRun = true;
+}
+
+if (!fs.existsSync(path)) {
+	console.error("Path '" + path + "' does not exist. Exiting.");
+	process.exit(1);
+}
+
+removeFiles(path, {
+	dryRun: dryRun,
+	threshold: threshold,
+	recurseInDirectories: recursive
+});
