@@ -1,18 +1,19 @@
 {
-  "name": "FileCleaner",
-  "version": "0.0.1",
-  "description": "Removes older files",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": "",
-  "author": "",
-  "license": "BSD",
-  "dependencies": {
-    "moment": "~1.7.2"
-  }
+	"name": "removeFiles",
+	"version": "0.0.1",
+	"description": "Removes files matching certain criterias",
+	"private": true,
+	"main": "index.js",
+	"bin": {
+		"removeFiles": "./bin/removeFiles"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": "",
+	"author": "Thomas Fritz <thomas.fritz@meinkauf.at>",
+	"license": "BSD",
+	"dependencies": {
+		"moment": "~1.7.2"
+	}
 }
