@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 var fs = require('fs');
-var removeFiles = require('../');
-var path = process.argv[2];
-var threshold = parseInt(process.argv[3]) || 14;
+var removeFiles = require('../').removeFiles;
+var comparators = require('../').comparators;
 
+var path = process.argv[2];
 if(!path) {
 	console.error("Mandatory path argument is not set. Exiting.");
+	process.exit(1);
+}
+
+var threshold = parseInt(process.argv[3]);
+if(!threshold) {
+	console.error("Mandatory threshold argument is not set. Exiting.");
 	process.exit(1);
 }
 
@@ -28,8 +34,25 @@ if (!fs.existsSync(path)) {
 	process.exit(1);
 }
 
-removeFiles(path, {
-	dryRun: dryRun,
-	threshold: threshold,
-	recurseInDirectories: recursive
+removeFiles(path, comparators.ctime, {
+		dryRun: dryRun,
+		threshold: threshold,
+		recurseInDirectories: recursive
+	}, function (error, meta) {
+		var size = meta.size;
+		var files = meta.files;
+		var unit = "byte";
+		if (size > 1073741824) {
+			size = size / 1073741824;
+			unit = "GB"
+		} else if (size > 1048576) {
+			size = size / 1048576;
+			unit = "MB";
+		} else if (size > 1024) {
+			size = size / 1024;
+			unit = "kB";
+		}
+		size = Math.round(size * 100) / 100;
+		var dryRunString = dryRun ? "(dryrun) " : "";
+		console.log(dryRunString + "Deleted " + files + " files with a total size of ~" + size + unit + ".");
 });
