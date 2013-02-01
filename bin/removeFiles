@@ -17,7 +17,7 @@ var argv = optimist
 		.describe('d', 'Dryrun. Just show what you would delete.')
 
 		.alias('c', 'comparator')
-		.default('c', 'ctime')
+		.default('c', 'mtime')
 		.describe('c', 'What comparator should be used')
 
 		.boolean('r')
