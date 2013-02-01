@@ -1,32 +1,38 @@
 #!/usr/bin/env node
 var fs = require('fs');
+var util = require('util');
+var optimist = require('optimist');
+var argv = optimist
+		.usage('Usage: $0 -t [num] [/path/to/search/for/files]')
+		.alias('t', 'threshold')
+		.describe('t', 'Threshold in days. Files older than this threshold will match')
+		.demand('t')
+
+		.alias('d', 'dry')
+		.boolean('d')
+		.describe('d', 'Dryrun. Just show what you would delete.')
+
+		.alias('c', 'comparator')
+		.default('c', 'ctime')
+		.describe('c', 'What comparator should be used')
+
+		.boolean('r')
+		.alias('r', 'recursive')
+		.describe('r', 'Recurse into subdirectories')
+
+		.alias('f', 'force')
+		.boolean('f')
+		.describe('f', 'Do not ask questions.')
+
+		.argv;
+
 var removeFiles = require('../').removeFiles;
 var comparators = require('../').comparators;
 
-var path = process.argv[2];
-if(!path) {
-	console.error("Mandatory path argument is not set. Exiting.");
+var path = argv._.pop();
+if (!path) {
+	console.error("Missing required argument: path");
 	process.exit(1);
-}
-
-var threshold = parseInt(process.argv[3]);
-if(!threshold) {
-	console.error("Mandatory threshold argument is not set. Exiting.");
-	process.exit(1);
-}
-
-var recursive = process.argv[4] || "true";
-if (recursive.toLowerCase() === "false") {
-	recursive = false;
-} else {
-	recursive = true;
-}
-
-var dryRun = process.argv[5] || "true";
-if (dryRun.toLowerCase() === "false") {
-	dryRun = false;
-} else {
-	dryRun = true;
 }
 
 if (!fs.existsSync(path)) {
@@ -34,25 +40,51 @@ if (!fs.existsSync(path)) {
 	process.exit(1);
 }
 
-removeFiles(path, comparators.ctime, {
-		dryRun: dryRun,
-		threshold: threshold,
-		recurseInDirectories: recursive
-	}, function (error, meta) {
-		var size = meta.size;
-		var files = meta.files;
-		var unit = "byte";
-		if (size > 1073741824) {
-			size = size / 1073741824;
-			unit = "GB"
-		} else if (size > 1048576) {
-			size = size / 1048576;
-			unit = "MB";
-		} else if (size > 1024) {
-			size = size / 1024;
-			unit = "kB";
-		}
-		size = Math.round(size * 100) / 100;
-		var dryRunString = dryRun ? "(dryrun) " : "";
-		console.log(dryRunString + "Deleted " + files + " files with a total size of ~" + size + unit + ".");
-});
+if (typeof comparators[argv.comparator] === "undefined") {
+	console.error("Comparator '" + argv.comparator + "' does not exist. Exiting");
+	process.exit(1);
+}
+
+var comparatorFunction = comparators[argv.comparator];
+var options = {
+	dryRun: argv.dry,
+	threshold: argv.threshold,
+	recurseInDirectories: argv.recursive
+};
+var callback = function (error, meta) {
+	var size = meta.size;
+	var files = meta.files;
+	var unit = "byte";
+	if (size > 1073741824) {
+		size = size / 1073741824;
+		unit = "GB"
+	} else if (size > 1048576) {
+		size = size / 1048576;
+		unit = "MB";
+	} else if (size > 1024) {
+		size = size / 1024;
+		unit = "kB";
+	}
+	size = Math.round(size * 100) / 100;
+	var dryRunString = argv.dry ? "(dryrun) " : "";
+	console.log();
+	console.log("Used this settings:\n\tcomparator method:", argv.comparator);
+	console.log("\toptions:", util.inspect(options, false, null, true));
+	console.log();
+	console.log(dryRunString + "Deleted " + files + " files with a total size of ~ " + size + unit + ".");
+	process.exit(0);
+};
+
+console.log("Using this settings:\n\tcomparator method:", argv.comparator);
+console.log("\toptions:", util.inspect(options, false, null, true));
+if (!argv.force) {
+	console.log("\n\nContinue with deleting all files without further warnings by pressing <ENTER>!");
+	process.stdin.setEncoding('utf-8');
+	process.stdin.on('data', function (input) {
+		removeFiles(path, comparatorFunction, options, callback);
+	});
+	process.stdin.resume();
+} else {
+	removeFiles(path, comparatorFunction, options, callback);
+}
+
