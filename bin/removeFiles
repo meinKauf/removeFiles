@@ -8,6 +8,10 @@ var argv = optimist
 		.describe('t', 'Threshold in days. Files older than this threshold will match')
 		.demand('t')
 
+		.alias('m', 'measurement')
+		.describe('m', 'Defines what type of unit the threshold is. (seconds, minutes, hours, days, months, years)')
+		.default('m', 'days')
+
 		.alias('d', 'dry')
 		.boolean('d')
 		.describe('d', 'Dryrun. Just show what you would delete.')
@@ -23,6 +27,10 @@ var argv = optimist
 		.alias('f', 'force')
 		.boolean('f')
 		.describe('f', 'Do not ask questions.')
+
+		.alias('v', 'verbose')
+		.boolean('v')
+		.describe('v', 'Be verbose')
 
 		.argv;
 
@@ -49,7 +57,9 @@ var comparatorFunction = comparators[argv.comparator];
 var options = {
 	dryRun: argv.dry,
 	threshold: argv.threshold,
-	recurseInDirectories: argv.recursive
+	thresholdMeasurememt: argv.measurement,
+	recurseInDirectories: argv.recursive,
+	verbose: argv.verbose
 };
 var callback = function (error, meta) {
 	var size = meta.size;
@@ -67,18 +77,21 @@ var callback = function (error, meta) {
 	}
 	size = Math.round(size * 100) / 100;
 	var dryRunString = argv.dry ? "(dryrun) " : "";
-	console.log();
-	console.log("Used this settings:\n\tcomparator method:", argv.comparator);
-	console.log("\toptions:", util.inspect(options, false, null, true));
+	console.log("\nUsed this settings:\n\tcomparator method:", argv.comparator);
+	for(var key in options) {
+  	console.log("\t" + key + ":", options[key]);
+  }
 	console.log();
 	console.log(dryRunString + "Deleted " + files + " files with a total size of ~ " + size + unit + ".");
 	process.exit(0);
 };
 
-console.log("Using this settings:\n\tcomparator method:", argv.comparator);
-console.log("\toptions:", util.inspect(options, false, null, true));
+console.log("Using this settings:\n\tcomparator:", argv.comparator);
+for(var key in options) {
+	console.log("\t" + key + ":", options[key]);
+}
 if (!argv.force) {
-	console.log("\n\nContinue with deleting all files without further warnings by pressing <ENTER>!");
+	console.log("\nContinue with deleting all files without further warnings by pressing <ENTER>!");
 	process.stdin.setEncoding('utf-8');
 	process.stdin.on('data', function (input) {
 		removeFiles(path, comparatorFunction, options, callback);
